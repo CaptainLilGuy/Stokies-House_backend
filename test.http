@@ -1,0 +1,71 @@
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc4MTM5NzY3LCJpYXQiOjE3NzgxMzk0NjcsImp0aSI6ImNhNGM4MGMyM2U4MDQyODI4NmFkN2I0YzVhNzE3MjJhIiwidXNlcl9pZCI6IjIifQ.5wbkzXXM6ENA8DCCs2ulePvtnvIH4HM28Pw2e9BHxjA
+### Register a new user
+POST http://127.0.0.1:8000/api/users/register/
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@email.com",
+  "password": "testpass123"
+}
+
+### Login
+POST http://127.0.0.1:8000/api/users/login/
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpass123"
+}
+
+### Test token
+GET http://127.0.0.1:8000/api/users/profile/
+Authorization: Bearer {{token}}
+
+### Create a household
+POST http://127.0.0.1:8000/api/households/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "My Family"
+}
+
+### Get my household
+GET http://127.0.0.1:8000/api/households/me/
+Authorization: Bearer {{token}}
+
+### Create a category
+POST http://127.0.0.1:8000/api/inventory/categories/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Bumbu Dapur"
+}
+
+### Add an inventory item
+POST http://127.0.0.1:8000/api/inventory/items/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Beras",
+  "quantity": 5,
+  "unit": "kg"
+}
+
+### Get all items
+GET http://127.0.0.1:8000/api/inventory/items/
+Authorization: Bearer {{token}}
+
+### Add an expense
+POST http://127.0.0.1:8000/api/expenses/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "description": "Beli beras",
+  "amount": 75000,
+  "date": "2026-05-07"
+}
