@@ -9,4 +9,4 @@ urlpatterns = [
     path('api/households/', include('households.urls')),
     path('api/inventory/', include('inventory.urls')),
     path('api/expenses/', include('expenses.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)   

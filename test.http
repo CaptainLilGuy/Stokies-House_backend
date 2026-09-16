@@ -1,4 +1,4 @@
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc4MTM5NzY3LCJpYXQiOjE3NzgxMzk0NjcsImp0aSI6ImNhNGM4MGMyM2U4MDQyODI4NmFkN2I0YzVhNzE3MjJhIiwidXNlcl9pZCI6IjIifQ.5wbkzXXM6ENA8DCCs2ulePvtnvIH4HM28Pw2e9BHxjA
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgzNDg1OTkxLCJpYXQiOjE3ODMzOTk1OTEsImp0aSI6IjFmMWU5YmQ3YzhlMTRjNTg4YTczODU4MDU0YzI1NGYxIiwidXNlcl9pZCI6IjEifQ.s-Y_2HTA3JnEeiXYydnhExUdnEqCzccAkxITHSPhHis
 ### Register a new user
 POST http://127.0.0.1:8000/api/users/register/
 Content-Type: application/json
@@ -14,8 +14,8 @@ POST http://127.0.0.1:8000/api/users/login/
 Content-Type: application/json
 
 {
-  "username": "testuser",
-  "password": "testpass123"
+  "username": "taqi",
+  "password": "123"
 }
 
 ### Test token
@@ -69,3 +69,6 @@ Authorization: Bearer {{token}}
   "amount": 75000,
   "date": "2026-05-07"
 }
+
+GET http://localhost:8000/api/inventory/items/
+Authorization: Bearer {{token}}

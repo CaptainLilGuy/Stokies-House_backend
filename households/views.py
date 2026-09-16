@@ -1,16 +1,25 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Household
+from .models import Household, HouseholdMember
 from .serializers import HouseholdSerializer
 
 class HouseholdCreateView(generics.CreateAPIView):
     serializer_class = HouseholdSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        household = serializer.save(created_by=self.request.user)
-        household.members.add(self.request.user)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            household = serializer.save(created_by=request.user)
+            HouseholdMember.objects.create(
+                household=household,
+                user=request.user,
+                role=HouseholdMember.OWNER
+            )
+            return Response(HouseholdSerializer(household).data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class HouseholdDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = HouseholdSerializer
@@ -26,7 +35,12 @@ class JoinHouseholdView(APIView):
         code = request.data.get('invite_code', '').upper()
         try:
             household = Household.objects.get(invite_code=code)
-            household.members.add(request.user)
+            HouseholdMember.objects.get_or_create(
+                household=household,
+                user=request.user,
+                defaults={'role':HouseholdMember.MEMBER}
+            )
+            return Response(HouseholdSerializer(household).data)
         except Household.DoesNotExist:
             return Response({'error': 'Invalid invite code'}, status=400)
         
