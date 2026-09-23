@@ -12,6 +12,8 @@ from .serializers import CategorySerializer, ItemSerializer, InventoryTransactio
 from households.models import Household
 from decimal import Decimal, InvalidOperation
 from .parser import parse_items, extract_total, extract_date, strip_header_noise
+from .matcher import find_best_match
+from .models import Item
 
 def get_user_household(user):
     return Household.objects.filter(members=user).first()
@@ -205,6 +207,17 @@ class ParseReceiptView(APIView):
         lines = strip_header_noise(raw_lines)
 
         items, layout_used = parse_items(lines)
+
+        household = get_user_household(request.user)
+        existing_items = list(
+            Item.objects.filter(household=household).values('id', 'name')
+        )
+
+        for item in items:
+            match = find_best_match(item['name'], existing_items)
+            item['matched_item_id'] = match['id'] if match else None
+            item['matched_item_name'] = match['name'] if match else None
+            item['matched_score'] = match['score'] if match else None
 
         return Response({
             'items': items,
