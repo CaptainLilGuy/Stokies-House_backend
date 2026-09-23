@@ -18,9 +18,6 @@ def find_best_match(ocr_name: str, existing_items: list) -> dict | None:
             best_match = item
 
     if best_match and best_score >= MATCH_THRESHOLD:
-        print (best_match)
-        print (best_score)
         return {**best_match, 'score': best_score}
     else:
-        print("No item here is in stock, all new items")
         return None
