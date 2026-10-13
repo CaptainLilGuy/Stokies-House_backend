@@ -14,9 +14,29 @@ from decimal import Decimal, InvalidOperation
 from .parser import parse_items, extract_total, extract_date, strip_header_noise
 from .matcher import find_best_match
 from .models import Item
+from django.db.models import OuterRef, Subquery
+from rest_framework.exceptions import ValidationError
 
 def get_user_household(user):
     return Household.objects.filter(members=user).first()
+
+def parse_price(raw):
+    if raw in (None, ''):
+        return None
+    try:
+        price = Decimal(str(raw))
+    except InvalidOperation:
+        raise ValidationError({'unit_price': 'Enter a valid number.'})
+    if price < 0:
+        raise ValidationError({'unit_price': 'Must not be negative.'})
+    return price
+
+def with_last_price(queryset):
+    latest = (InventoryTransaction.objects
+              .filter(item=OuterRef('pk'), unit_price__isnull=False)
+              .order_by('-created_at')
+              .values('unit_price')[:1])
+    return queryset.annotate(last_unit_price=Subquery(latest))
 
 # CRUD Endpoints
 
