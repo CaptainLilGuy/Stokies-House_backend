@@ -45,6 +45,7 @@ class InventoryTransaction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, related_name='inventory_transactions')
     change_type = models.CharField(max_length=20, choices=ChangeType.choices)
     quantity_delta = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     source = models.CharField(max_length=20, choices=Source.choices, default=Source.MANUAL)
     note = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
