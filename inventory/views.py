@@ -70,11 +70,20 @@ class ItemListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         household = get_user_household(self.request.user)
-        return Item.objects.filter(household=household).order_by('-updated_at')
+        return with_last_price(
+            Item.objects.filter(household=household)
+        ).order_by('-updated_at')
 
     def perform_create(self, serializer):
         household = get_user_household(self.request.user)
-        
+        if household is None:
+            raise ValidationError({'household': 'Join or create a household first.'})
+
+        initial_price = parse_price(self.request.data.get('unit_price'))
+        source = self.request.data.get('source')
+        if source not in InventoryTransaction.Source.values:
+            source = InventoryTransaction.Source.MANUAL
+
         raw_qty = self.request.data.get('quantity')
         try:
             initial_qty = Decimal(str(raw_qty)) if raw_qty is not None else Decimal('0')
@@ -83,7 +92,6 @@ class ItemListCreateView(generics.ListCreateAPIView):
 
         with transaction.atomic():
             item = serializer.save(household=household)
-
             if initial_qty > 0:
                 InventoryTransaction.objects.create(
                     item=item,
@@ -91,6 +99,7 @@ class ItemListCreateView(generics.ListCreateAPIView):
                     user=self.request.user,
                     change_type= InventoryTransaction.ChangeType.PURCHASED,
                     quantity_delta=initial_qty,
+                    unit_price=initial_price,
                     source=InventoryTransaction.Source.MANUAL,
                     note='Initial stock on item creation',
                 )
@@ -105,7 +114,7 @@ class ItemDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         household = get_user_household(self.request.user)
-        return Item.objects.filter(household=household)
+        return with_last_price(Item.objects.filter(household=household))
     
     def perform_update(self, serializer):
         print(f"Updating item: {serializer.instance.name}")
