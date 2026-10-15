@@ -100,7 +100,7 @@ class ItemListCreateView(generics.ListCreateAPIView):
                     change_type= InventoryTransaction.ChangeType.PURCHASED,
                     quantity_delta=initial_qty,
                     unit_price=initial_price,
-                    source=InventoryTransaction.Source.MANUAL,
+                    source=source,
                     note='Initial stock on item creation',
                 )
                 Item.objects.filter(pk=item.pk).update(
