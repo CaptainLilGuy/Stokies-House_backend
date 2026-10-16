@@ -18,6 +18,12 @@ Content-Type: application/json
   "password": "123"
 }
 
+### Dashboard
+// Isi ulang pake jwt token ngambil dari test login
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkyMjAzNDM2LCJpYXQiOjE3OTIxMTcwMzYsImp0aSI6IjNkYmY1NmI0MWI0NTRmYjg5MzI1MmQ0YzYxOTJjYmEwIiwidXNlcl9pZCI6IjEifQ.kFcWcowlqb6KLbIWj-B31USRVmUzEJgXf5oVzvoMjAU
+GET http://127.0.0.1:8000/api/dashboard
+Authorization: Bearer {{token}}
+
 ### Test token
 GET http://127.0.0.1:8000/api/users/profile/
 Authorization: Bearer {{token}}
