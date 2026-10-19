@@ -190,9 +190,10 @@ class ProcessAutoDecrementsView(APIView):
                     InventoryTransaction.objects.create(
                         item=item,
                         household=item.household,
-                        quantity_delta=item.auto_decrement_amount,
-                        change_type='consumed',
-                        source='auto'
+                        quantity_delta=-item.auto_decrement_amount,
+                        change_type=InventoryTransaction.ChangeType.CONSUMED,
+                        source=InventoryTransaction.Source.AUTO,
+                        note='Auto Decrement',
                     )
 
                     Item.objects.filter(pk=item.pk).update(
