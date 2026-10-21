@@ -5,3 +5,5 @@ db.sqlite3
 .env
 media/
 *.log
+*firebase-adminsdk*.json
+serviceAccount*.json
