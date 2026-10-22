@@ -20,13 +20,30 @@ Content-Type: application/json
 
 ### Dashboard
 // Isi ulang pake jwt token ngambil dari test login
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkyMjAzNDM2LCJpYXQiOjE3OTIxMTcwMzYsImp0aSI6IjNkYmY1NmI0MWI0NTRmYjg5MzI1MmQ0YzYxOTJjYmEwIiwidXNlcl9pZCI6IjEifQ.kFcWcowlqb6KLbIWj-B31USRVmUzEJgXf5oVzvoMjAU
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzkyNjU1MjkyLCJpYXQiOjE3OTI1Njg4OTIsImp0aSI6ImFjNGUwNjYzZjJlZDRlMWU4MWQyZTEzYmYxZGZkOTU3IiwidXNlcl9pZCI6IjEifQ.PqIa-3pOdc8XE0j5cR51dkmzRf0G0VRtRa--xYN48q4
+@device_token = 
 GET http://127.0.0.1:8000/api/dashboard
 Authorization: Bearer {{token}}
 
 ### Test token
 GET http://127.0.0.1:8000/api/users/profile/
 Authorization: Bearer {{token}}
+
+### Register device token
+POST http://127.0.0.1:8000/api/users/devices/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "token": "test-token-123", "platform": "android" }
+
+### Delete device token
+DELETE http://127.0.0.1:8000/api/users/devices/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "token": "test-token-123", "platform": "android" }
+
+
 
 ### Create a household
 POST http://127.0.0.1:8000/api/households/
