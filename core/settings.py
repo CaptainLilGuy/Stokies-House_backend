@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'inventory',
     'expenses',
     'households',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -147,3 +148,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
+
+# DSS assumptions for expiry reminders (document in thesis, test in UAT)
+EXPIRY_WINDOW_DAYS = 3    # keep in sync with DashboardProvider.expiryWindowDays
+EXPIRED_GRACE_DAYS = 1    # keep notifying for items expired up to N days ago
