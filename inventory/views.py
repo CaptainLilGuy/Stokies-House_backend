@@ -1,20 +1,20 @@
 from rest_framework import generics, permissions
 from datetime import timedelta
 from django.db import transaction
-from django.db.models import F
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import Category, Item, InventoryTransaction
-from .serializers import CategorySerializer, ItemSerializer, InventoryTransactionSerializer
+from .models import Category, Item, InventoryTransaction, Tag
+from .serializers import CategorySerializer, ItemSerializer, InventoryTransactionSerializer, TagSerializer
 from households.models import Household
 from decimal import Decimal, InvalidOperation
 from .parser import parse_items, extract_total, extract_date, strip_header_noise
 from .matcher import find_best_match
 from .models import Item
-from django.db.models import OuterRef, Subquery
+from django.db.models import Count, OuterRef, Subquery, F
+from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError
 from .parser import parse_receipt_pages
 
@@ -39,7 +39,7 @@ def with_last_price(queryset):
               .filter(item=OuterRef('pk'), unit_price__isnull=False)
               .order_by('-created_at')
               .values('unit_price')[:1])
-    return queryset.annotate(last_unit_price=Subquery(latest))
+    return queryset.annotate(last_unit_price=Subquery(latest)).prefetch_related('tags')
 
 # CRUD Endpoints
 
@@ -54,6 +54,26 @@ class CategoryListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         household = get_user_household(self.request.user)
         serializer.save(household=household)
+
+class TagListCreateView(generics.ListCreateAPIView):
+    serializer_class = TagSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return tags_with_count(get_user_household(self.request.user))
+
+    def perform_create(self, serializer):
+        household = get_user_household(self.request.user)
+        if household is None:
+            raise ValidationError({'household': 'Join or create a household first'})
+        serializer.save(household=household)
+
+class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = TagSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return tags_with_count(get_user_household(self.request.user))
 
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CategorySerializer
