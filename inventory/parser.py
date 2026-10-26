@@ -1,4 +1,6 @@
 import re
+from rapidfuzz import fuzz
+
 
 KEYWORD_LINES = {
     'diskon', 'harga jual', 'total', 'tunai', 'kembali', 'anda hemat',
@@ -24,6 +26,8 @@ HEADER_NOISE_PATTERN = re.compile(
     re.IGNORECASE
 )
 FOOTER_KEYWORDS_ORDER = ['diskon', 'harga jual', 'total', 'tunai', 'kembali', 'anda hemat']
+OVERLAP_NAME_TRESHOLD = 85    # 0-100, fuzz.ratio on item names
+MIN_OVERLAP_ITEMS = 2         # below this, flag instead of dropping
 
 def match_keyword(lower_line: str):
     """Returns the canonical keyword this line matches, or None."""
@@ -141,7 +145,32 @@ def parse_separated_layout(lines):
     return extract_items(groups)
 
 
-# ── 'combined' layout (qty+price on one line, e.g. "1 13500") ──
+# ── handle overlap  ────────────────────────────────────────────
+
+
+def _overlap_size(merged, page):
+    """Largest k such that the last k merged items equal the first k page items."""
+    for k in range(min(len(merged), len(page)), 0, -1):
+        if all(_same_item(a,b) for a, b in zip(merged[-k:], page[:k])):
+            return k
+    return 0
+
+# ── combine the layouts ────────────────────────────────────────
+
+
+def merge_page_items(pages_items):
+    merged = []
+    for page in pages_items:
+        page = [dict(i) for i in page]
+        k = _overlap_size(merged, page)
+        if k>= MIN_OVERLAP_ITEMS:
+            page = page[k:]
+        elif k == 1:
+            page[0]['needs_review'] = True
+            page[0]['possible_duplicates'] = True
+        merged.extend(page)
+    return merged
+
 
 def parse_combined_layout(lines):
     names = []
@@ -189,6 +218,27 @@ def parse_items(lines):
         return [], 'unrecognized'
 
 
+def parse_receipt_pages(raw_texts):
+    """Returns (items, layout, total, date) for one or more OCR'd pages, in order."""
+    pages_items, layouts, total, date = [], [], None, None
+    for text in raw_texts:
+        raw_lines = [l for l in text.split('\n') if l.strip()]
+        lines = strip_header_noise(raw_lines)
+        items, layout = parse_items(lines)
+        pages_items.append(items)
+        if items:
+            layouts.append(layout)
+        page_total = extract_total(lines)
+        if page_total is not None:
+            total = page_total
+        if date is None:
+            date = extract_date(raw_lines)
+
+    items = merge_page_items(pages_items)
+    layout = layouts[0] if layouts else 'Unrecognized'
+    return items, layout, total, date
+
+
 # ── shared helpers ──────────────────────────────────────
 
 def _parse_price(raw: str):
@@ -198,6 +248,14 @@ def _parse_price(raw: str):
         return int(cleaned)
     except ValueError:
         return None
+
+
+def _same_item(a, b):
+    return (
+        fuzz.ratio(a['name'].lower(), b['name'].lower()) >= OVERLAP_NAME_TRESHOLD
+        and a['quantity'] == b['quantity']
+        and a['unit_price'] == b['unit_price']
+    )
 
 
 def extract_footer_values(lines):

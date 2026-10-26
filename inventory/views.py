@@ -16,6 +16,9 @@ from .matcher import find_best_match
 from .models import Item
 from django.db.models import OuterRef, Subquery
 from rest_framework.exceptions import ValidationError
+from .parser import parse_receipt_pages
+
+MAX_RECEIPT_PAGES = 6
 
 def get_user_household(user):
     return Household.objects.filter(members=user).first()
@@ -229,14 +232,23 @@ class ParseReceiptView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        raw_text = request.data.get('raw_text', '')
-        if not raw_text.strip():
+        print("ocr-parse keys:", list(request.data.keys()))
+        raw_texts = request.data.get('raw_text')
+        if raw_texts is None:
+            single = request.data.get('raw_text', '')
+            raw_texts = [single] if single else [] 
+
+        if not isinstance(raw_texts, list):
+            return Response({'error': 'raw_texts must be a list.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        raw_texts = [t for t in raw_texts if isinstance(t, str) and t.strip()]
+        if not raw_texts:
             return Response({'error': 'No text provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        raw_lines = [l for l in raw_text.split('\n') if l.strip()]
-        lines = strip_header_noise(raw_lines)
+        if len(raw_texts) > MAX_RECEIPT_PAGES:
+            return Response({'error': f'At most {MAX_RECEIPT_PAGES} photos.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        items, layout_used = parse_items(lines)
+        items, layout_used, total, date = parse_receipt_pages(raw_texts)
 
         household = get_user_household(request.user)
         existing_items = list(
@@ -252,8 +264,9 @@ class ParseReceiptView(APIView):
         return Response({
             'items': items,
             'layout_detected': layout_used,   # NEW — surface this so Flutter can show a hint if 'unrecognized'
-            'total': extract_total(lines),
-            'date': extract_date(raw_lines),
+            'total': total,
+            'date': date,
             'store_name': None,               # NEW — always None now; user fills this in manually
-            'raw_text': raw_text,
+            'raw_text': '\n\n--- page ---\n\n'.join(raw_texts),
+            'page_count': len(raw_texts)
         }, status=status.HTTP_200_OK)
