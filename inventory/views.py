@@ -41,6 +41,11 @@ def with_last_price(queryset):
               .values('unit_price')[:1])
     return queryset.annotate(last_unit_price=Subquery(latest)).prefetch_related('tags')
 
+def tags_with_count(household):
+    return (Tag.objecs.filter(household=household)
+            .annotate(item_count=Count('items'))
+            .order_by(Lower('name')))
+
 # CRUD Endpoints
 
 class CategoryListCreateView(generics.ListCreateAPIView):
