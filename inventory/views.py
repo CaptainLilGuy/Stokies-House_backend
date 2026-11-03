@@ -257,21 +257,21 @@ class ParseReceiptView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        print("ocr-parse keys:", list(request.data.keys()))
-        raw_texts = request.data.get('raw_text')
+        raw_texts = request.data.get('raw_texts')
+        print("raw_texts type:", type(raw_texts), "| len: ", len(raw_texts) if raw_texts else None)
         if raw_texts is None:
             single = request.data.get('raw_text', '')
             raw_texts = [single] if single else [] 
 
         if not isinstance(raw_texts, list):
-            return Response({'error': 'raw_texts must be a list.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'A: raw_texts must be a list.'}, status=status.HTTP_400_BAD_REQUEST)
 
         raw_texts = [t for t in raw_texts if isinstance(t, str) and t.strip()]
         if not raw_texts:
-            return Response({'error': 'No text provided.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'B: No text provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if len(raw_texts) > MAX_RECEIPT_PAGES:
-            return Response({'error': f'At most {MAX_RECEIPT_PAGES} photos.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'C: At most {MAX_RECEIPT_PAGES} photos.'}, status=status.HTTP_400_BAD_REQUEST)
 
         items, layout_used, total, date = parse_receipt_pages(raw_texts)
 
