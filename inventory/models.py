@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 from django.conf import settings
 from households.models import Household
 
@@ -8,12 +9,25 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+class Tag(models.Model):
+    name = models.CharField(max_length=300) #SAMAIN KAYAK DI FRONTEND
+    household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name='tags')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(Lower('name'), 'household', name='unique_tag_name_per_household_ci'),
+        ]
+
+    def __str__(self):
+        return self.name
     
 class Item(models.Model):
     name = models.CharField(max_length=100)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
     unit = models.CharField(max_length=20, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
+    tags = models.ManyToManyField(Tag, blank=True, related_name='items')
     household = models.ForeignKey(Household, on_delete=models.CASCADE, related_name='items')
     expiry_date = models.DateField(null=True, blank=True)
     image = models.ImageField(upload_to='item_images/', blank=True, null=True)

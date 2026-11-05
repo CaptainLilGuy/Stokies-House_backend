@@ -235,7 +235,7 @@ def parse_receipt_pages(raw_texts):
             date = extract_date(raw_lines)
 
     items = merge_page_items(pages_items)
-    layout = layouts[0] if layouts else 'Unrecognized'
+    layout = layouts[0] if layouts else 'unrecognized'
     return items, layout, total, date
 
 

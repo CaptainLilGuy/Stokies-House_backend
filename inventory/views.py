@@ -42,7 +42,7 @@ def with_last_price(queryset):
     return queryset.annotate(last_unit_price=Subquery(latest)).prefetch_related('tags')
 
 def tags_with_count(household):
-    return (Tag.objecs.filter(household=household)
+    return (Tag.objects.filter(household=household)
             .annotate(item_count=Count('items'))
             .order_by(Lower('name')))
 

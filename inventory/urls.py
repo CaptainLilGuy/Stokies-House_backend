@@ -1,9 +1,11 @@
 from django.urls import path
-from .views import CategoryListCreateView, CategoryDetailView, ItemListCreateView, ItemDetailView, InventoryTransactionListCreateView, ProcessAutoDecrementsView, ParseReceiptView
+from .views import CategoryListCreateView, CategoryDetailView, TagListCreateView, TagDetailView, ItemListCreateView, ItemDetailView, InventoryTransactionListCreateView, ProcessAutoDecrementsView, ParseReceiptView
 
 urlpatterns = [
     path('categories/', CategoryListCreateView.as_view()),
     path('categories/<int:pk>/', CategoryDetailView.as_view()),
+    path('tags/', TagListCreateView.as_view()),
+    path('tags/<int:pk>/', TagDetailView.as_view()),
     path('items/', ItemListCreateView.as_view()),
     path('items/<int:pk>/', ItemDetailView.as_view()),
     path('transactions/', InventoryTransactionListCreateView.as_view()),

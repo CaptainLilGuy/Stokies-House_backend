@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from households.models import Household
-from .models import Category, Item, InventoryTransaction
+from .models import Category, Item, InventoryTransaction, Tag
+
+def _household_of(request):
+    return Household.objects.filter(members=request.user).first()    
 
 class CategorySerializer(serializers.ModelSerializer): 
     class Meta:
@@ -8,21 +11,57 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'household']
         read_only_fields = ['household']
 
+class TagSerializer(serializers.ModelSerializer):
+    item_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model =  Tag
+        fields = ['id', 'name', 'item_count']
+
+    def validate_name(self, value):
+        value = ' '.join(value.split())
+        if not value:
+            raise serializers.ValidationError('Tag name is required.')
+        household = _household_of(self.context['request'])
+        clash = Tag.objects.filter(household=household, name__iexact=value)
+        if self.instance is not None:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError('A tag with this name is already exist.')
+        return value
+
+class TagBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
+
 class ItemSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     # Annotated in the view querysets; absent on create responses (DRF skips it).
     last_unit_price = serializers.DecimalField(
         max_digits=12, decimal_places=2, read_only=True)
+    tags = TagBriefSerializer(many=True, read_only=True)
+    tag_ids = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all(), source='tags',
+        write_only=True, required=False
+    )
 
     class Meta:
         model = Item
         fields = [
             'id', 'name', 'quantity', 'unit', 'category', 'category_name',
+            'tags', 'tag_ids',
             'household', 'expiry_date', 'image', 'notes', 'auto_decrement_amount',
             'auto_decrement_interval_days', 'last_auto_decrement_at',
             'last_unit_price', 'created_at', 'updated_at'
         ]
         read_only_fields = ['household', 'created_at', 'updated_at', 'quantity', 'last_auto_decrement_at']
+
+    def validate_tag_ids(self, tags):
+        household = _household_of(self.context['request'])
+        if household is None or any(t.household.id != household.id for t in tags):
+            raise serializers.ValidationError('Tag not found in your household.')
+        return tags
 
 class InventoryTransactionSerializer(serializers.ModelSerializer):
     class Meta:
