@@ -17,7 +17,8 @@ PRICE_PATTERN = re.compile(rf'^\(?({PRICE_TOKEN})\)?$')
 FOOTER_VALUE_PATTERN = re.compile(rf'^:?\s*\(?({PRICE_TOKEN}|\d{{1,3}})\)?$')  # accepts (1), :(1,300), (500)
 QTY_PATTERN = re.compile(r'^\d{1,2}$')
 QTY_PRICE_COMBINED_PATTERN = re.compile(rf'^(\d{{1,2}})\s+({PRICE_TOKEN})$')  # e.g. "1 13500"
-DATE_PATTERN = re.compile(r'\d{1,2}[.\-/]\s?\d{1,2}[.\-/]\s?\d{2,4}')
+# DATE_PATTERN = re.compile(r'\d{1,2}[.\-/]\s?\d{1,2}[.\-/]\s?\d{2,4}')
+DATE_PATTERN = re.compile(r'(?<![\d.])\d{1,2}[./-]\d{1,2}[./-](?:\d{4}|\d{2})(?!\d)')
 HEADER_NOISE_PATTERN = re.compile(
     r'(\d{1,2}[.\-/]\s?\d{1,2}[.\-/]\s?\d{2,4})|'
     r'(\d{1,2}:\d{2})|'
@@ -218,9 +219,37 @@ def parse_items(lines):
         return [], 'unrecognized'
 
 
-def parse_receipt_pages(raw_texts):
+# def parse_receipt_pages(raw_texts):
+#     """Returns (items, layout, total, date) for one or more OCR'd pages, in order."""
+#     pages_items, layouts, total, date = [], [], None, None
+#     for text in raw_texts:
+#         raw_lines = [l for l in text.split('\n') if l.strip()]
+#         lines = strip_header_noise(raw_lines)
+#         items, layout = parse_items(lines)
+#         pages_items.append(items)
+#         if items:
+#             layouts.append(layout)
+#         page_total = extract_total(lines)
+#         if page_total is not None:
+#             total = page_total
+#         if date is None:
+#             date = extract_date(raw_lines)
+
+#     items = merge_page_items(pages_items)
+#     layout = layouts[0] if layouts else 'unrecognized'
+#     return items, layout, total, date
+
+
+
+def parse_receipt_pages(raw_texts, ocr_pages=None):
     """Returns (items, layout, total, date) for one or more OCR'd pages, in order."""
     pages_items, layouts, total, date = [], [], None, None
+    if ocr_pages and len(ocr_pages) == len(raw_texts):
+        from .indomaret_parser import INDOMARET_THRESHOLD, indomaret_score, parse_indomaret
+        if indomaret_score(raw_texts) >= INDOMARET_THRESHOLD:
+            res = parse_indomaret(ocr_pages)
+            if res['items']:
+                return res['items'], 'indomaret', res['total'], res['date'], res['meta']
     for text in raw_texts:
         raw_lines = [l for l in text.split('\n') if l.strip()]
         lines = strip_header_noise(raw_lines)
@@ -235,8 +264,8 @@ def parse_receipt_pages(raw_texts):
             date = extract_date(raw_lines)
 
     items = merge_page_items(pages_items)
-    layout = layouts[0] if layouts else 'unrecognized'
-    return items, layout, total, date
+    layout = layouts[0] if layouts else 'unrecognized'   # lowercase, matches Flutter
+    return items, layout, total, date, {'vendor': 'generic'}
 
 
 # ── shared helpers ──────────────────────────────────────

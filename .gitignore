@@ -7,3 +7,4 @@ media/
 *.log
 *firebase-adminsdk*.json
 serviceAccount*.json
+ocr_dumps/

@@ -17,6 +17,8 @@ from django.db.models import Count, OuterRef, Subquery, F
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError
 from .parser import parse_receipt_pages
+import json, pathlib
+from django.conf import settings
 
 MAX_RECEIPT_PAGES = 6
 
@@ -258,6 +260,7 @@ class ParseReceiptView(APIView):
 
     def post(self, request):
         raw_texts = request.data.get('raw_texts')
+        # print(repr(raw_texts))
         print("raw_texts type:", type(raw_texts), "| len: ", len(raw_texts) if raw_texts else None)
         if raw_texts is None:
             single = request.data.get('raw_text', '')
@@ -273,7 +276,19 @@ class ParseReceiptView(APIView):
         if len(raw_texts) > MAX_RECEIPT_PAGES:
             return Response({'error': f'C: At most {MAX_RECEIPT_PAGES} photos.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        items, layout_used, total, date = parse_receipt_pages(raw_texts)
+        ocr_pages = request.data.get('ocr_pages')
+        if not isinstance(ocr_pages, list):
+            ocr_pages = None
+        items, layout_used, total, date, meta = parse_receipt_pages(raw_texts, ocr_pages)
+        # if ocr_pages:
+        #     dump_dir = pathlib.Path(settings.BASE_DIR) / 'ocr_dumps'
+        #     dump_dir.mkdir(exist_ok=True)
+        #     (dump_dir / f"{timezone.now():%Y%m%d_%H%M%S}.json").write_text(
+        #         json.dumps({'raw_texts': raw_texts, 'ocr_pages': ocr_pages},
+        #                 ensure_ascii=False, indent=1),
+        #         encoding='utf-8')
+
+        # items, layout_used, total, date = parse_receipt_pages(raw_texts)
 
         household = get_user_household(request.user)
         existing_items = list(
@@ -286,6 +301,10 @@ class ParseReceiptView(APIView):
             item['matched_item_name'] = match['name'] if match else None
             item['matched_score'] = match['score'] if match else None
 
+        print('layout:', layout_used, '| vendor:', meta.get('vendor'),
+        '| items:', len(items), '| date:', date, '| total:', total)
+        print('checks:', meta.get('checks'))
+
         return Response({
             'items': items,
             'layout_detected': layout_used,   # NEW — surface this so Flutter can show a hint if 'unrecognized'
@@ -293,5 +312,6 @@ class ParseReceiptView(APIView):
             'date': date,
             'store_name': None,               # NEW — always None now; user fills this in manually
             'raw_text': '\n\n--- page ---\n\n'.join(raw_texts),
-            'page_count': len(raw_texts)
+            'page_count': len(raw_texts),
+            'meta': meta,
         }, status=status.HTTP_200_OK)

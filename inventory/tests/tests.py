@@ -6,7 +6,7 @@ from django.test import TestCase, SimpleTestCase
 # from users.models import User
 # from households.models import Household, HouseholdMember
 # from .models import Item, InventoryTransaction
-from .parser import merge_page_items
+from ..parser import merge_page_items
 
 
 def it(name, qty, price):
