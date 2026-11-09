@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 
 from households.models import Household
 from .models import InventoryTransaction
+from households.models import Household, HouseholdMember
 
 CT = InventoryTransaction.ChangeType
 STOCK_IN = [CT.PURCHASED, CT.RESTOCKED]
@@ -148,4 +149,7 @@ class DashboardView(APIView):
             'generated_at': now.isoformat(),
             'price_changes': price_changes(household, now),
             'waste': waste_summary(household, now),
+            'budget': float(household.monthly_budget) if household.monthly_budget is not None else None,
+            'is_owner': HouseholdMember.objects.filter(
+                household=household, user=request.user, role=HouseholdMember.OWNER).exists(),
         })

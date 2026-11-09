@@ -63,6 +63,12 @@ class ItemSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Tag not found in your household.')
         return tags
 
+    def validate_category(self, category):
+        household = _household_of(self.context['request'])
+        if category is not None and (household is None or category.household_id != household.id):
+         raise serializers.ValidationError('Category not found in your household.')
+        return category
+
 class InventoryTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryTransaction
