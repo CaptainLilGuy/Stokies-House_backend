@@ -142,4 +142,4 @@ class MyHouseholdView(APIView):
         household = Household.objects.filter(members=request.user).first()
         if not household:
             return Response({'error': 'Not in a household'}, status=404)
-        return Response(HouseholdSerializer(household).data)
+        return Response(HouseholdSerializer(household, context={'request': request}).data)
