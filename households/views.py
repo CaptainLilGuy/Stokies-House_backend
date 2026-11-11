@@ -65,7 +65,7 @@ class JoinHouseholdView(APIView):
             return Response({'error': 'Leave your current household first.'}, status=400)
 
         HouseholdMember.objects.get_or_create(
-            household=household, user=current.user,
+            household=household, user=request.user,
             defaults={'role': HouseholdMember.MEMBER})
         return Response(HouseholdSerializer(household, context={'request': request}).data)
 
