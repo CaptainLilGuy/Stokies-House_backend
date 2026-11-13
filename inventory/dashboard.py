@@ -234,7 +234,7 @@ class DashboardView(APIView):
             'price_changes': price_changes(household, now),
             'waste': waste_summary(household, now),
             'low_stock': low_stock(items, ledger, now),
-            'user_first': use_first(items, ledger, timezone.localdate()),
+            'use_first': use_first(items, ledger, timezone.localdate()),
             'budget': float(household.monthly_budget) if household.monthly_budget is not None else None,
             'is_owner': HouseholdMember.objects.filter(
                 household=household, user=request.user, role=HouseholdMember.OWNER).exists(),
