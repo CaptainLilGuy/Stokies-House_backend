@@ -118,3 +118,16 @@ class InventoryTransactionSerializer(serializers.ModelSerializer):
             })
         
         return data
+
+class TransactionHistorySerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source='item.name', read_only=True)
+    item_unit = serializers.CharField(source='item.unit', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = InventoryTransaction
+        fields = [
+            'id', 'item', 'item_name', 'item_unit', 'change_type',
+            'quantity_data', 'unit_price', 'source', 'note',
+            'created_at', 'username'
+        ]

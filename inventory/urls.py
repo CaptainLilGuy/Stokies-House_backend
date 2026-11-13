@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CategoryListCreateView, CategoryDetailView, TagListCreateView, TagDetailView, ItemListCreateView, ItemDetailView, InventoryTransactionListCreateView, ProcessAutoDecrementsView, ParseReceiptView
+from .views import CategoryListCreateView, CategoryDetailView, TagListCreateView, TagDetailView, ItemListCreateView, ItemDetailView, InventoryTransactionListCreateView, ProcessAutoDecrementsView, ParseReceiptView, TransactionHistoryView
 
 urlpatterns = [
     path('categories/', CategoryListCreateView.as_view()),
@@ -11,4 +11,5 @@ urlpatterns = [
     path('transactions/', InventoryTransactionListCreateView.as_view()),
     path('process-auto-decrements/', ProcessAutoDecrementsView.as_view()),
     path('ocr-parse/', ParseReceiptView.as_view()),
+    path('transaction/history/', TransactionHistoryView.as_view()),
 ]

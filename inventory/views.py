@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .models import Category, Item, InventoryTransaction, Tag
-from .serializers import CategorySerializer, ItemSerializer, InventoryTransactionSerializer, TagSerializer
+from .serializers import CategorySerializer, ItemSerializer, InventoryTransactionSerializer, TagSerializer, TransactionHistorySerializer
 from households.models import Household
 from decimal import Decimal, InvalidOperation
 from .parser import parse_items, extract_total, extract_date, strip_header_noise
@@ -19,6 +19,7 @@ from rest_framework.exceptions import ValidationError
 from .parser import parse_receipt_pages
 import json, pathlib
 from django.conf import settings
+from rest_framework.pagination import LimitOffsetPagination
 
 MAX_RECEIPT_PAGES = 6
 
@@ -174,6 +175,31 @@ class InventoryTransactionListCreateView(generics.ListCreateAPIView):
             Item.objects.filter(pk=txn.item.pk).update(
                 quantity = F('quantity') + txn.quantity_delta
             )
+
+class TransactionHistoryPagination(LimitOffsetPagination):
+    default_limit = 30
+    max_limit = 100
+
+class TransactionHistoryView(generics.ListAPIView):
+
+    serializer_class = TransactionHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = TransactionHistoryPagination
+
+    def get_queryset(self):
+        household = get_user_household(self.request.user)
+        if household is None:
+            return InventoryTransaction.objects.none
+        qs = (InventoryTransaction.objects.filter(household=household)
+              .select_related('item', 'user')
+              .order_by('-created_at', '-id'))
+        change_type = self.request.query_params.get('change_type')
+        if change_type in InventoryTransaction.ChangeType.values:
+            qs = qs.filter(change_type=change_type)
+        item = self.request.query_params.get('item')
+        if item and item.isdigit():
+            qs = qs.filter(item=item)
+        return qs
 
 #Action / Command Endpoints
 class ProcessAutoDecrementsView(APIView):
