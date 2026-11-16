@@ -17,7 +17,7 @@ def require_owner(user, household):
     ok = HouseholdMember.objects.filter(
         household=household, user=user, role=HouseholdMember.OWNER).exists()
     if not ok:
-        raise PermissionDenied('Only the household owner can do this.')
+        raise PermissionDenied('Hanya pemilik rumah tangga yang dapat melakukan ini.')
 
 
 
@@ -58,11 +58,11 @@ class JoinHouseholdView(APIView):
         try:
             household = Household.objects.get(invite_code=code)
         except Household.DoesNotExist:
-            return Response({'error': 'Invalid invite code'}, status=400)
+            return Response({'error': 'Kode undangan tidak valid'}, status=400)
 
         current = membership_of(request.user)
         if current and current.household_id != household.id:
-            return Response({'error': 'Leave your current household first.'}, status=400)
+            return Response({'error': 'Keluar dari rumah tangga saat ini terlebih dahulu.'}, status=400)
 
         HouseholdMember.objects.get_or_create(
             household=household, user=request.user,
@@ -77,7 +77,7 @@ class RemoveMemberView(APIView):
         household = get_object_or_404(Household, pk=pk, members=request.user)
         require_owner(request.user, household)
         if user_id == request.user.id:
-            return Response({'error': 'Use "leave" to exit your own household.'}, status=400)
+            return Response({'error': 'Gunakan "keluar" untuk meninggalkan rumah tanggamu sendiri.'}, status=400)
         target = get_object_or_404(HouseholdMember, household=household, user_id=user_id)
         target.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -90,11 +90,11 @@ class LeaveHouseholdView(APIView):
         with transaction.atomic():
             m = membership_of(request.user)
             if m is None:
-                return Response({'error': 'You are not in a household.'}, status=404)
+                return Response({'error': 'Kamu belum bergabung di rumah tangga.'}, status=404)
             others = HouseholdMember.objects.filter(household=m.household).exclude(pk=m.pk)
             if m.role == HouseholdMember.OWNER and others.exists():
                 return Response(
-                    {'error': 'Transfer ownership to another member before leaving.'},
+                    {'error': 'Alihkan kepemilikan ke anggota lain sebelum keluar.'},
                     status=400)
             household, last_one = m.household, not others.exists()
             m.delete()
@@ -125,7 +125,7 @@ class HouseholdBudgetView(APIView):
     def put(self, request):
         m = membership_of(request.user)
         if m is None:
-            return Response({'error': 'Not in a household'}, status=404)
+            return Response({'error': 'Belum bergabung di rumah tangga'}, status=404)
         require_owner(request.user, m.household)
         s = BudgetSerializer(data=request.data)
         s.is_valid(raise_exception=True)
@@ -141,5 +141,5 @@ class MyHouseholdView(APIView):
     def get(self, request):
         household = Household.objects.filter(members=request.user).first()
         if not household:
-            return Response({'error': 'Not in a household'}, status=404)
+            return Response({'error': 'Belum bergabung di rumah tangga'}, status=404)
         return Response(HouseholdSerializer(household, context={'request': request}).data)

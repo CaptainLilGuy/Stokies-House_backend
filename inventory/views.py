@@ -32,9 +32,9 @@ def parse_price(raw):
     try:
         price = Decimal(str(raw))
     except InvalidOperation:
-        raise ValidationError({'unit_price': 'Enter a valid number.'})
+        raise ValidationError({'unit_price': 'Masukkan angka yang valid.'})
     if price < 0:
-        raise ValidationError({'unit_price': 'Must not be negative.'})
+        raise ValidationError({'unit_price': 'Tidak boleh negatif.'})
     return price
 
 def with_last_price(queryset):
@@ -73,7 +73,7 @@ class TagListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         household = get_user_household(self.request.user)
         if household is None:
-            raise ValidationError({'household': 'Join or create a household first'})
+            raise ValidationError({'household': 'Bergabung atau buat rumah tangga terlebih dahulu'})
         serializer.save(household=household)
 
 class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -108,7 +108,7 @@ class ItemListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         household = get_user_household(self.request.user)
         if household is None:
-            raise ValidationError({'household': 'Join or create a household first.'})
+            raise ValidationError({'household': 'Bergabung atau buat rumah tangga terlebih dahulu.'})
 
         initial_price = parse_price(self.request.data.get('unit_price'))
         source = self.request.data.get('source')
@@ -189,7 +189,7 @@ class TransactionHistoryView(generics.ListAPIView):
     def get_queryset(self):
         household = get_user_household(self.request.user)
         if household is None:
-            return InventoryTransaction.objects.none
+            return InventoryTransaction.objects.none()
         qs = (InventoryTransaction.objects.filter(household=household)
               .select_related('item', 'user')
               .order_by('-created_at', '-id'))
@@ -293,14 +293,14 @@ class ParseReceiptView(APIView):
             raw_texts = [single] if single else [] 
 
         if not isinstance(raw_texts, list):
-            return Response({'error': 'A: raw_texts must be a list.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Format data tidak valid.'}, status=status.HTTP_400_BAD_REQUEST)
 
         raw_texts = [t for t in raw_texts if isinstance(t, str) and t.strip()]
         if not raw_texts:
-            return Response({'error': 'B: No text provided.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Tidak ada teks yang dikirim.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if len(raw_texts) > MAX_RECEIPT_PAGES:
-            return Response({'error': f'C: At most {MAX_RECEIPT_PAGES} photos.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Maksimal {MAX_RECEIPT_PAGES} foto.'}, status=status.HTTP_400_BAD_REQUEST)
 
         ocr_pages = request.data.get('ocr_pages')
         if not isinstance(ocr_pages, list):

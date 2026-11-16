@@ -11,5 +11,5 @@ urlpatterns = [
     path('transactions/', InventoryTransactionListCreateView.as_view()),
     path('process-auto-decrements/', ProcessAutoDecrementsView.as_view()),
     path('ocr-parse/', ParseReceiptView.as_view()),
-    path('transaction/history/', TransactionHistoryView.as_view()),
+    path('transactions/history/', TransactionHistoryView.as_view()),
 ]
