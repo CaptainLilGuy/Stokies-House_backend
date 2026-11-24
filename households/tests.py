@@ -2,6 +2,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from users.models import User
 from .models import Household, HouseholdMember
+from inventory.models import Category
 
 # Create your tests here.
 
@@ -46,3 +47,10 @@ class HouseholdRulesTests(TestCase):
     def test_member_cannot_rename_household(self):
         r = self.api(self.member).patch(f'/api/households/{self.hh.id}/', {'name': 'X'}, format='json')
         self.assertEqual(r.status_code, 403)
+
+    def test_new_household_gets_default_categories(self):
+        user = User.objects.create_user('baru', password='x')
+        r = self.api(user).post('/api/households/create/', {'name': 'Baru'}, format='json')
+        self.assertEqual(r.status_code, 201)
+        names = set(Category.objects.filter(household_id=r.data['id']).values_list('name', flat=True))
+        self.assertEqual(names, {'Makanan', 'Minuman', 'Alat Kebersihan', 'Lainnya'})

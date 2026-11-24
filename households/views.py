@@ -6,6 +6,11 @@ from .serializers import HouseholdSerializer, BudgetSerializer
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
+from inventory.models import Category
+from django.db import transaction
+
+
+DEFAULT_CATEGORIES = ['Makanan', 'Minuman', 'Alat Kebersihan', 'Lainnya']
 
 
 def membership_of(user):
@@ -27,16 +32,25 @@ class HouseholdCreateView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
             household = serializer.save(created_by=request.user)
             HouseholdMember.objects.create(
                 household=household,
                 user=request.user,
                 role=HouseholdMember.OWNER
             )
-            return Response(HouseholdSerializer(household).data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            Category.objects.bulk_create([
+                Category(name=name, household=household)
+                for name in DEFAULT_CATEGORIES
+            ])
+
+        return Response(
+            HouseholdSerializer(household, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 class HouseholdDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = HouseholdSerializer

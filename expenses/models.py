@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from households.models import Household
-from inventory.models import Item, Category
+from inventory.models import Item, Category, Receipt
 
 class Expense(models.Model):
     class Source(models.TextChoices):
@@ -17,6 +17,7 @@ class Expense(models.Model):
     date = models.DateField()
     source = models.CharField(max_length=20, choices=Source.choices, default=Source.MANUAL)
     created_at = models.DateTimeField(auto_now_add=True)
+    receipt = models.ForeignKey(Receipt, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenses')
 
     def __str__(self):
         return f"{self.description} - Rp{self.amount}"
